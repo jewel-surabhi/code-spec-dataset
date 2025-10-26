@@ -1,0 +1,47 @@
+The SORT1T program is a COBOL-based utility designed for sorting and searching tables stored in working-storage. This program demonstrates COBOL's ability to sort in-memory tables using the ASCENDING clause and perform efficient searches with the SEARCH ALL statement for indexed tables.
+
+Key features:
+
+Purpose:
+The program sorts and searches a table of state-related information stored in working-storage, showcasing COBOL's in-memory sorting and binary search capabilities.
+
+Table Details:
+
+    Table Name: WS-State-Table
+    Structure:
+        Fields:
+            WS-State-Full-Name (PIC X(21)) – Full name of the state.
+            WS-State-Abbrev-Name (PIC X(7)) – Abbreviated name of the state.
+            WS-State-Abbrev (PIC X(2)) – Two-character state abbreviation.
+        Indexed By: WS-State-IDX.
+        Occurrence: 51 entries.
+    Sort Keys:
+        Primary Key: WS-State-Abbrev-Name.
+        Secondary Key: WS-State-Full-Name.
+
+Sorting Mechanism:
+
+    Sorts the table in ascending order by WS-State-Abbrev-Name and WS-State-Full-Name using the SORT statement.
+
+Searching Mechanism:
+
+    Performs a binary search (SEARCH ALL) on the sorted table for efficient record lookup.
+    Displays the state abbreviation, name, and full name upon a match.
+    Outputs "RECORD NOT FOUND" if no matching record exists.
+
+Procedure Flow:
+
+    1000-Begin-Job:
+        Initializes the program by loading table data into working-storage (1100-Load-WS-Tables).
+        Table data is moved from WS-State-HOLD to WS-State-Table-Setup.
+    2000-Process:
+        Sorts the table (SORT WS-State-Table).
+        Performs a search for a specific state abbreviation (SEARCH ALL WS-State-Table).
+    3000-End-Job:
+        Placeholder for cleanup logic, displaying an end-of-job message.
+
+Output:
+
+    Displays search results for the state abbreviation N.J.:
+        Abbreviation, name, and full name of the state.
+    Displays a message if no matching record is found.

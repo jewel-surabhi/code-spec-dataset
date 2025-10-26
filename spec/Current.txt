@@ -1,0 +1,82 @@
+The Current module is part of the FAST Modularization Framework and provides a template for defining user-defined current profiles. It allows simulation of hydrodynamic currents by initializing parameters, calculating current velocities, and supporting multiple current profile models. The module is designed to be flexible and extensible for different user-specific current models.
+Key Features:
+
+Purpose:
+
+    Simulates hydrodynamic currents for use in offshore wind turbine and marine system simulations.
+    Supports multiple predefined current profile models and user-defined extensions.
+
+Components:
+
+    User-Defined Current Profile (UserCurrent):
+        A placeholder routine for defining custom current profiles.
+        Allows users to implement their logic for calculating current velocities (CurrVxi, CurrVyi) at a specific elevation (zi) and water depth.
+    Predefined Current Profile Models (Calc_Current):
+        Current velocities are calculated based on the selected profile model (InitInp%CurrMod):
+            Model 0: No current (default).
+            Model 1: Standard power law-based current profile.
+            Model 2: User-defined current profile (calls UserCurrent).
+        Supports elevation-based computations for xi and yi velocity components, ensuring accurate modeling of subsurface and near-surface currents.
+    Initialization Routine (Current_Init):
+        Initializes all variables and allocates memory for storing current velocities at various points.
+        Computes initial velocities and their partial derivatives with respect to elevation for wave stretching.
+
+Interfaces:
+
+1. Subroutine: UserCurrent
+
+    Purpose: User-defined routine for implementing custom current profiles.
+    Inputs:
+        zi: Elevation (meters).
+        EffWtrDpth: Effective water depth (meters).
+        DirRoot: Directory path for simulation results.
+    Outputs:
+        CurrVxi: xi-component of current velocity (m/s).
+        CurrVyi: yi-component of current velocity (m/s).
+    Default Implementation: Sets both velocity components (CurrVxi, CurrVyi) to 0.0.
+
+2. Subroutine: Calc_Current
+
+    Purpose: Computes the xi and yi current velocity components at a given elevation (z).
+    Inputs:
+        InitInp: Initialization data (type Current_InitInputType).
+        z: Elevation relative to mean sea level (meters).
+        h: Effective water depth (positive value, meters).
+        DirRoot: Directory path for simulation results.
+    Outputs:
+        CurrVxi: xi-component of current velocity (m/s).
+        CurrVyi: yi-component of current velocity (m/s).
+    Logic:
+        Handles elevations below the seabed or above mean sea level by setting velocities to zero.
+        Uses the selected current profile model to compute velocities.
+
+3. Subroutine: Current_Init
+
+    Purpose: Performs initialization steps for the current module, including memory allocation and initial computations.
+    Inputs:
+        InitInp: Input initialization data (type Current_InitInputType).
+    Outputs:
+        InitOut: Output initialization data (type Current_InitOutputType).
+        ErrStat: Error status of the operation.
+        ErrMsg: Error message if initialization fails.
+    Logic:
+        Allocates memory for velocity arrays (CurrVxi, CurrVyi).
+        Computes current velocities for all grid points and their partial derivatives for wave stretching.
+
+Supported Current Profile Models:
+
+    None (Model 0):
+        No current velocities; both components are set to zero.
+    Standard Profile (Model 1):
+        Uses power-law scaling to compute subsurface and near-surface current velocities based on user-defined parameters (CurrSSV0, CurrNSV0).
+    User-Defined Profile (Model 2):
+        Calls the UserCurrent routine to allow custom current profile logic.
+
+Licensing:
+
+    Licensed under the Apache License, Version 2.0.
+    Distributed on an "AS IS" BASIS, without warranties or guarantees.
+
+Use Case:
+
+The Current module is designed for use in hydrodynamic simulations, particularly in offshore wind turbine modeling. It provides flexibility for users to define their current profiles while supporting standard models for typical use cases.

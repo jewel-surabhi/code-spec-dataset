@@ -1,0 +1,59 @@
+EDI to Ballerina Record Generator Specification
+
+Purpose: Generate Ballerina record types from an EDI schema (edi:EdiSchema) to represent EDI data structures, supporting hierarchical segments, groups, and composite fields, for use in legacy EDI systems (e.g., X12, EDIFACT).
+
+Language: Implemented in Ballerina, using io, log, and edi modules.
+
+License: Apache License 2.0, distributed "AS IS" without warranties.
+
+Inputs
+
+EDI Schema (edi:EdiSchema): Defines EDI structure with:
+
+name: Schema name (e.g., "X12_850").
+
+segments: Array of EdiUnitSchema (EdiSegSchema or EdiSegGroupSchema).
+
+segmentDefinitions: Map of EdiSegSchema by code (e.g., {"ST": {...}}).
+
+Output Path: File path for generated Ballerina code (.bal file).
+
+Outputs
+
+Ballerina Records: Array of BalRecord objects representing EDI segments, groups, and composite fields.
+
+Written as string to .bal file (e.g., schema.bal).
+
+Records are public, closed, with fields reflecting EDI structure.
+
+Errors: Descriptive errors for invalid schemas, unsupported segment references, or I/O failures.
+
+Data Structures
+
+BalRecord: Represents a Ballerina record with:
+
+name: Record name (e.g., "ST_Type").
+
+fields: Array of BalField (type, name, array/optional flags, default value).
+
+closed: True (fixed fields).
+
+publicRecord: True (public visibility).
+
+BalField: Defines a record field with:
+
+name: Field name (e.g., "SenderId").
+
+btype: BalBasicType (string, int, float, boolean) or BalRecord (for composites).
+
+array: True if repeatable (e.g., maxOccurances > 1).
+
+optional: True if not required (e.g., minOccurances == 0).
+
+defaultValue: Optional default (e.g., segment code for "code" field).
+
+GenContext: Tracks generated records (typeRecords) and type name counters (typeNumber) for uniqueness.
+
+BalType: Union of BalBasicType (enum: BSTRING, BINT, BFLOAT, BBOOLEAN) or BalRecord.
+
+Type Mapping: EDI types to Ballerina: "string" → BSTRING, "int" → BINT, "float" → BFLOAT, "COMPOSITE" → BalRecord.

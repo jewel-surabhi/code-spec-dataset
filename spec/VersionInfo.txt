@@ -1,0 +1,101 @@
+The VersionInfo module is part of the NWTC Subroutine Library and provides functionality for retrieving and displaying version information, compilation details, and runtime execution parameters. It also includes utilities for parsing command-line arguments and handling various runtime configurations.
+Key Features:
+
+Purpose:
+
+    Tracks and reports versioning, compilation options, and runtime details for simulations.
+    Handles command-line argument parsing for configuring program behavior.
+
+Components:
+
+    Version Query and Display:
+        Retrieves version information from Git commits (QueryGitVersion) and compilation metadata (GetVersion).
+        Displays version and runtime details (DispCompileRuntimeInfo).
+    Command-Line Argument Parsing:
+        Parses flags and arguments provided via the command line (CheckArgs).
+        Supports multiple runtime configurations, including restart files, visualization inputs, and steady-state simulations.
+    Error Handling:
+        Validates syntax and displays meaningful error messages (INVALID_SYNTAX).
+
+Interfaces:
+
+1. Function: QueryGitVersion
+
+    Purpose: Retrieves the Git commit information for the current build.
+    Outputs:
+        QueryGitVersion: A string containing the Git version or "unversioned" if unavailable.
+
+2. Function: GetVersion
+
+    Purpose: Constructs a string describing the program version, compilation options, precision, and Git commit.
+    Inputs:
+        ThisProgVer: Program name, date, and version (type ProgDesc).
+        Cmpl4SFun (optional): Logical flag indicating compilation for Simulink.
+        Cmpl4LV (optional): Logical flag indicating compilation for LabVIEW.
+    Outputs:
+        GetVersion: A string describing the program version and compilation details.
+    Logic:
+        Adds precision (single or double) and architecture (32-bit or 64-bit).
+        Appends Git commit information.
+
+3. Subroutine: DispCompileRuntimeInfo
+
+    Purpose: Displays compilation and runtime information, including Git version, compiler details, architecture, precision, OpenMP support, and execution date/time.
+    Inputs:
+        name: Name of the program.
+
+4. Subroutine: CheckArgs
+
+    Purpose: Parses command-line arguments and flags for runtime configuration.
+    Inputs:
+        Arg1: First non-flag argument (e.g., input file).
+        ErrStat (optional): Error status for catching issues without aborting.
+        Arg2 (optional): Second non-flag argument.
+        Flag (optional): First flag argument.
+        InputArgArray (optional): Array of arguments for unit testing.
+    Logic:
+        Splits arguments into flags and non-flags.
+        Handles specific flags like -restart, -steadystate, -vtklin, and -version.
+        Displays syntax errors for invalid or excess arguments.
+
+5. Subroutine: INVALID_SYNTAX
+
+    Purpose: Handles invalid command-line syntax errors.
+    Inputs:
+        ErrorMessage: Message describing the syntax error.
+    Logic:
+        Displays copyright, version, and syntax information.
+        Aborts the program with a fatal error if syntax is invalid.
+
+6. Subroutine: GET_COMMAND_LINE_ARG
+
+    Purpose: Retrieves a specific command-line argument based on its index.
+    Inputs:
+        ArgIndex: Index of the argument to retrieve.
+    Outputs:
+        ArgGiven: Retrieved argument string.
+
+7. Function: IsFlag
+
+    Purpose: Checks if a command-line argument is a flag.
+    Inputs:
+        ArgString: Command-line argument string.
+    Outputs:
+        IsFlag: Logical value indicating whether the argument is a flag.
+
+Supported Command-Line Flags:
+
+    -h: Displays copyright, license, compilation details, and syntax.
+    -v or -version: Displays version and compilation details.
+    -restart: Specifies a restart capability with checkpoint files.
+    -vtklin: Enables visualization mode with input files.
+    -steadystate: Configures steady-state simulations.
+
+Licensing:
+
+    Licensed under the Apache License, Version 2.0.
+    Distributed on an "AS IS" BASIS without warranties or guarantees.
+
+Use Case:
+
+The VersionInfo module is designed for simulations requiring precise version tracking, runtime configuration, and command-line argument handling. It is particularly useful for scientific applications where reproducibility and detailed logging of compilation/runtime settings are critical.

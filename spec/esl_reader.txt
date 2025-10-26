@@ -1,0 +1,166 @@
+ESL to EDI Schema Converter Specification
+
+Purpose: Convert Electronic Data Interchange (EDI) Structure Language (ESL) files (YAML format) into a JSON-serializable edi:EdiSchema format, supporting single-file and batch directory processing, for compatibility with legacy EDI systems (e.g., X12 or EDIFACT standards).
+Language: Implemented in Ballerina, leveraging io, file, yaml, log, and edi modules.
+License: Apache License 2.0, distributed "AS IS" without warranties.
+
+Inputs
+
+ESL File(s): YAML file(s) defining EDI schema structure (e.g., schema.esl), with sections heading, detail, summary, and metadata (name or id).
+Single file path or directory of .esl files.
+Excludes files named "basedefs" or "structures.txt".
+
+Base Definitions: YAML file (basedefPath) containing segment definitions, mapped to edi:EdiSegSchema.
+Output Path: File path (single file) or directory (batch mode) for JSON output.
+
+Outputs
+
+EDI Schema Object (edi:EdiSchema):
+name: Sanitized root name (from ESL name, id, or default "Root").
+delimiters: Fixed {segment: "'", field: "+", component: ":"}.
+segmentDefinitions: Map of segment schemas from base definitions.
+segments: Array of EdiSegGroupSchema or EdiUnitRef for hierarchy.
+
+File Output: JSON file(s) (e.g., schema.json or schemaName.json in batch mode).
+Errors: Descriptive errors for invalid inputs, parsing failures, or I/O issues.
+
+Processing Flow
+
+Main Entry (main1):
+Validate command-line args: [eslPath, basedefPath, outputPath].
+Call convertEsl with provided paths.
+
+Conversion (convertEsl):
+Load base segment definitions from YAML (basedefPath) into segmentDefs.
+Single File Mode:
+Read ESL YAML, convert to edi:EdiSchema, apply fixSchema, write JSON to outputPath.
+
+Batch Mode (if eslDataPath and outputPath are directories):
+Iterate .esl files in eslDataPath.
+For each: Read YAML, convert to edi:EdiSchema, apply fixSchema, write JSON to outputPath/.json.
+Skip non-.esl files or specific names ("basedefs", "structures.txt").
+
+Schema Parsing (readEslSchema):
+Extract heading, detail, summary arrays from ESL JSON; combine into units.
+Derive root name from name, id, or default "Root"; sanitize via getBalCompatibleName.
+Create root segment group with groupId, items=units, usage="M", count=1.
+Convert root group to EdiSegGroupSchema via readSegmentGroup.
+Build edi:EdiSchema with name, delimiters, segments, and segmentDefs.
+
+Segment Group Parsing (readSegmentGroup):
+Input: JSON object with groupId, items (array), usage, count.
+Validate groupId; error if missing.
+Create EdiSegGroupSchema:
+tag: Sanitized groupId.
+minOccurances: 1 if usage="M", else 0.
+maxOccurances: From count (int) or default 1.
+
+For each item in items:
+If idRef: Reference segment in segmentDefs; create EdiUnitRef with ref, optional minOccurances (usage="M"), maxOccurances (count).
+If groupId: Recursively process as nested EdiSegGroupSchema.
+Error if neither idRef nor groupId.
+
+Log debug messages for group and segment references.
+
+Name Sanitization (getBalCompatibleName):
+Trim input, replace non-alphanumeric/_ with "_".
+Prefix "A_" if starts with non-letter.
+Example: "Order-Details!" → "A_Order_Details_".
+
+Schema Fix (fixSchema):
+Apply post-processing to edi:EdiSchema (implementation not shown; assume validation or normalization).
+
+Error Handling and Logging
+
+Errors:
+Invalid args: Print usage message.
+File I/O: Propagate io:Error or file:Error.
+Schema issues: Error for missing groupId, invalid items, or undefined segment codes (e.g., "Segment definition not found for segment code ST").
+Descriptive messages include context (e.g., Failed to convert schema of EDI: Order850).
+
+Debug Logs:
+Log segment group and reference processing via log:printDebug.
+
+Graceful Handling:
+Skip irrelevant files in batch mode.
+Default root name to "Root" if name/id missing.
+
+Example
+
+Input ESL YAML:name: Order850
+heading:
+  - idRef: ST
+    usage: M
+    count: 1
+detail:
+  - groupId: LOOP_ITEM
+    usage: M
+    count: 10
+    items:
+      - idRef: IT1
+
+Input Base Definitions YAML:ST:
+  code: ST
+  tag: TransactionSetHeader
+  fields:
+    - tag: code
+      required: true
+    - tag: TransactionId
+      dataType: STRING
+IT1:
+  code: IT1
+  tag: ItemDetail
+  fields:
+    - tag: code
+      required: true
+    - tag: Quantity
+      dataType: INT
+
+Output JSON:{
+  "name": "Order850",
+  "delimiters": {"segment": "'", "field": "+", "component": ":"},
+  "segmentDefinitions": {
+    "ST": {
+      "code": "ST",
+      "tag": "TransactionSetHeader",
+      "minOccurances": 0,
+      "maxOccurances": 1,
+      "fields": [
+        {"tag": "code", "required": true},
+        {"tag": "TransactionId", "dataType": "STRING"}
+      ]
+    },
+    "IT1": {
+      "code": "IT1",
+      "tag": "ItemDetail",
+      "minOccurances": 0,
+      "maxOccurances": 1,
+      "fields": [
+        {"tag": "code", "required": true},
+        {"tag": "Quantity", "dataType": "INT"}
+      ]
+    }
+  },
+  "segments": [
+    {
+      "tag": "ST",
+      "minOccurances": 1,
+      "maxOccurances": 1
+    },
+    {
+      "tag": "A_LOOP_ITEM",
+      "minOccurances": 1,
+      "maxOccurances": 10,
+      "segments": [
+        {"ref": "IT1", "minOccurances": 0, "maxOccurances": 1}
+      ]
+    }
+  ]
+}
+
+Notes
+
+Legacy Context: Supports legacy EDI systems by processing structured ESL files, common in older integration platforms.
+Extensibility: Fixed delimiters; future versions could allow customization.
+Robustness: Handles diverse schemas (heading/detail/summary), validates segment references, and supports batch processing for scalability.
+Dependencies: Requires Ballerina runtime with edi, yaml, file, io, and log modules.

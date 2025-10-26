@@ -1,0 +1,72 @@
+The SORT4F program is a COBOL-based utility designed to demonstrate internal sorting with both an Input Procedure and an Output Procedure. It processes records from an input dataset, applies pre-sorting logic, sorts the records, applies post-sorting logic, and writes the processed records to an output file.
+
+Key features:
+
+Purpose:
+The program utilizes COBOL's internal sort facility to filter, sort, and process customer records using pre-sorting and post-sorting logic provided by the Input Procedure and Output Procedure.
+
+Sorting Mechanism:
+
+    Input Procedure (INPUT PROCEDURE):
+        Reads records from the input file (INFile).
+        Applies filtering logic to exclude records where INFile-Cust-State is "Illinois" or "New York".
+        Transfers valid records to the sort work file (SORTFile) for sorting.
+    Output Procedure (OUTPUT PROCEDURE):
+        Processes sorted records retrieved from the sort work file (SORTFile).
+        Writes the processed sorted records to the output file (OUTFile).
+    Sort Key: Records are sorted in ascending order by the SORTFile-Cust-Postal-Code field.
+
+Input and Output:
+
+    Input File (INFile):
+        Path: ../data/customer.dat.txt.
+        Organization: Line sequential.
+        Contains unsorted customer records.
+        File status tracked via WS-INFile-Status.
+    Output File (OUTFile):
+        Path: ../spool/cust-sort4f-out.txt.
+        Organization: Line sequential.
+        Contains processed, sorted customer records.
+        File status tracked via WS-OUTFile-Status.
+    Sort File (SORTFile):
+        Temporary work file used for sorting operations.
+        File status tracked via WS-SORTFile-Status.
+
+Error Handling:
+
+    File Operations:
+        Validates file status for read and write operations (WS-INFile-Status, WS-OUTFile-Status).
+        Displays error messages for failed operations.
+    Sort Operation:
+        Checks SORT-RETURN status.
+        Displays a warning message if sorting fails (SORT-RETURN > 0).
+
+Procedure Flow:
+
+    1000-Begin-Job:
+        Opens the input file (INFile).
+        Reads the initial record (5000-Read-INFile).
+    2000-Process:
+        Executes the sort operation with an Input Procedure (2100-Input-Procedure) and an Output Procedure (2200-Output-Procedure).
+        Filters records based on the state field (2110-Process-INFile-Record).
+        Transfers valid records to the sort file (8000-Release-SortFile).
+        Retrieves sorted records from the sort file (8000-Return-SortFile).
+        Processes and writes sorted records to the output file (2210-Process-OUTFile-Record, 6000-Write-OutFile).
+    3000-End-Job:
+        Closes the output file (OUTFile).
+        Displays an end-of-job message.
+
+Record Processing:
+
+    Pre-Sorting Logic: Filters out records where INFile-Cust-State is "Illinois" or "New York" in the Input Procedure.
+    Post-Sorting Logic: Processes each record in the Output Procedure (2210-Process-OUTFile-Record) before writing it to the output file (6000-Write-OutFile).
+
+Counters:
+
+    Tracks the number of records processed for INFile, SORTFile, and OUTFile using counters in WS-File-Counters.
+
+Maintenance:
+
+    Created on 2020-08-16 by dastagg to learn COBOL's internal sort operations with both pre- and post-sorting logic.
+
+This program showcases COBOL's ability to handle complex sorting scenarios by enabling custom logic both before and after the sorting operation. It is suitable for scenarios requiring extensive data transformation or filtering during processing.

@@ -1,0 +1,68 @@
+The SORT2F program is a COBOL-based utility designed to demonstrate internal sorting with an Input Procedure and the GIVING clause. It processes records from an input dataset, applies conditional logic before sorting, and writes the sorted output to a designated file.
+
+Key features:
+
+Purpose:
+The program utilizes COBOL's internal sort facility to filter, sort, and process customer records from an input file and output the sorted data to a file.
+
+Sorting Mechanism:
+
+    Input Procedure (INPUT PROCEDURE):
+        Reads records from the input file (INFile).
+        Applies filtering logic to exclude records where INFile-Cust-State is "Illinois" or "New York".
+        Transfers valid records to the sort work file (SORTFile) for sorting.
+    GIVING Clause: Specifies the output file (OUTFile) to store sorted records.
+    Sort Key: Sorts records in ascending order by SORTFile-Cust-City.
+
+Input and Output:
+
+    Input File (INFile):
+        Path: ../data/customer.dat.txt.
+        Organization: Line sequential.
+        Contains unsorted customer records.
+        File status tracked via WS-INFile-Status.
+    Output File (OUTFile):
+        Path: ../spool/cust-sort2f-out.txt.
+        Organization: Line sequential.
+        Contains sorted customer records.
+        File status tracked via WS-OUTFile-Status.
+    Sort File (SORTFile):
+        Temporary work file used for sorting operations.
+        File status tracked via WS-SORTFile-Status.
+
+Error Handling:
+
+    File Operations:
+        Validates file status after reading (WS-INFile-Status).
+        Displays error messages for failed read operations.
+    Sort Operation:
+        Checks SORT-RETURN status.
+        Displays a warning message if sorting fails (SORT-RETURN > 0).
+
+Procedure Flow:
+
+    1000-Begin-Job:
+        Opens the input file (INFile).
+        Reads the initial record (5000-Read-INFile).
+    2000-Process:
+        Executes the sort operation with an Input Procedure (2100-Input-Procedure).
+        Filters records based on the state field (2110-Process-INFile-Record).
+        Transfers valid records to the sort file (8000-Release-SortFile).
+        Writes sorted records to the output file (OUTFile).
+    3000-End-Job:
+        Displays an end-of-job message.
+
+Record Processing:
+
+    Filters out records where INFile-Cust-State is "Illinois" or "New York".
+    Moves remaining records to the sort file for sorting.
+
+Counters:
+
+    Tracks the number of records processed for INFile, SORTFile, and OUTFile using counters in WS-File-Counters.
+
+Maintenance:
+
+    Includes detailed file status tracking and error handling logic to ensure robust processing and debugging support.
+
+This program demonstrates COBOL's flexibility in sorting with an Input Procedure, allowing for pre-sorting logic such as filtering records or custom processing. It is suitable for scenarios where conditional logic is required before sorting large datasets.

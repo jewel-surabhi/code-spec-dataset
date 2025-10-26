@@ -1,0 +1,89 @@
+MES Command and State Synchronization Specification
+
+Purpose:
+This program is designed to synchronize Manufacturing Execution System (MES) commands and states between the MES layer and the underlying assembly and shuttle control systems. It collects the status of the assembly (trakAsmb) and shuttle (trakSingle) states and facilitates command handling for moving shuttles to specific destinations (e.g., ABB and Delta).
+
+Language:
+Structured Text (ST), compliant with IEC 61131-3 standards, commonly used in programmable logic controllers (PLCs).
+
+License:
+Not explicitly defined in the code. Assume internal or proprietary use.
+Inputs:
+
+    MES Commands (trakMES.cmd):
+        goABB: Command to move the shuttle to the ABB station.
+        goDelta: Command to move the shuttle to the Delta station.
+    Assembly State (trakAsmb.state):
+        ready: Indicates whether the assembly system is ready for operation.
+    Shuttle State (trakSingle.state):
+        atABB: Indicates whether the shuttle is at the ABB station.
+        atDelta: Indicates whether the shuttle is at the Delta station.
+        moving: Indicates whether the shuttle is currently moving.
+    Shuttle Commands (trakSingle.cmd):
+        goABB: Command to move the shuttle to the ABB station.
+        goDelta: Command to move the shuttle to the Delta station.
+
+Outputs:
+
+    MES State (trakMES.state):
+        power: Reflects whether the assembly system is ready (linked to trakAsmb.state.ready).
+        atABB: Reflects whether the shuttle is at the ABB station (linked to trakSingle.state.atABB).
+        atDelta: Reflects whether the shuttle is at the Delta station (linked to trakSingle.state.atDelta).
+    Shuttle Commands:
+        trakSingle.cmd.goABB: Forwarded from trakMES.cmd.goABB.
+        trakSingle.cmd.goDelta: Forwarded from trakMES.cmd.goDelta.
+    MES Command Deactivation:
+        Resets trakMES.cmd.goABB and trakMES.cmd.goDelta when the shuttle starts moving (trakSingle.state.moving transitions to TRUE).
+
+Processing Flow:
+Initialization (PROGRAM _INIT):
+
+    Deactivate MES Commands:
+        Set trakMES.cmd.goABB and trakMES.cmd.goDelta to FALSE to ensure no commands are active at startup.
+
+Cyclic Operations (PROGRAM _CYCLIC):
+
+    State Synchronization:
+        Update trakMES.state.power to reflect the readiness of the assembly (trakAsmb.state.ready).
+        Update trakMES.state.atABB to reflect whether the shuttle is at the ABB station (trakSingle.state.atABB).
+        Update trakMES.state.atDelta to reflect whether the shuttle is at the Delta station (trakSingle.state.atDelta).
+    Command Forwarding:
+        Forward MES commands (trakMES.cmd.goABB and trakMES.cmd.goDelta) to the shuttle system (trakSingle.cmd.goABB and trakSingle.cmd.goDelta).
+    Command Deactivation:
+        Detect when the shuttle starts moving using a positive edge detection on trakSingle.state.moving.
+        Reset trakMES.cmd.goABB and trakMES.cmd.goDelta to FALSE when shuttle movement begins.
+
+Error Handling:
+
+    Command Reset:
+        Commands (trakMES.cmd.goABB and trakMES.cmd.goDelta) are reset automatically when the shuttle starts moving to avoid redundant or conflicting commands.
+    State Consistency:
+        The cyclic update ensures that trakMES.state always reflects the latest status from trakAsmb and trakSingle.
+
+Examples:
+Scenario 1: Moving Shuttle to ABB Station:
+
+    An operator sets trakMES.cmd.goABB to TRUE.
+    The command is forwarded to trakSingle.cmd.goABB.
+    The shuttle starts moving to the ABB station, triggering trakSingle.state.moving.
+    The MES command trakMES.cmd.goABB is automatically reset to FALSE when the shuttle starts moving.
+    Once the shuttle reaches the ABB station, trakSingle.state.atABB transitions to TRUE, and this state is reflected in trakMES.state.atABB.
+
+Scenario 2: Moving Shuttle to Delta Station:
+
+    An operator sets trakMES.cmd.goDelta to TRUE.
+    The command is forwarded to trakSingle.cmd.goDelta.
+    The shuttle starts moving to the Delta station, triggering trakSingle.state.moving.
+    The MES command trakMES.cmd.goDelta is automatically reset to FALSE when the shuttle starts moving.
+    Once the shuttle reaches the Delta station, trakSingle.state.atDelta transitions to TRUE, and this state is reflected in trakMES.state.atDelta.
+
+Notes:
+
+    Real-Time Operation:
+        The program operates cyclically to ensure real-time synchronization between MES commands and system states.
+    Scalability:
+        Additional stations or commands can be added by extending the MES and shuttle state/command structures.
+    Command Reset Logic:
+        The use of edge detection (EDGEPOS) ensures that commands are reset only when the shuttle begins moving, avoiding premature deactivation.
+    Dependencies:
+        The program depends on the proper configuration of trakAsmb and trakSingle to provide accurate state information and execute commands.

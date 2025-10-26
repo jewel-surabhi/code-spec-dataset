@@ -1,0 +1,11 @@
+pastebinThe X12 EDI Schema Converter is a Ballerina-based tool for transforming X12 Electronic Data Interchange (EDI) schemas defined in XML Schema Definition (XSD) format into a custom JSON-serializable EDI schema structure. This converter supports single-file processing, directory-based batch conversion, and hierarchical schema resolution (e.g., Interchange.xsd with included inner schemas). It handles segment groups, loops, fields, and composite elements while applying compatibility adjustments (e.g., naming conventions) and optional conditional field logic from external segment details. The output schema adheres to a defined edi:EdiSchema type, enabling downstream EDI parsing, validation, or serialization in legacy or modern systems.
+
+Key features:
+
+Input Formats: X12 XSD files (standalone or with includes), optionally augmented by a CSV segment details file for conditional fields.
+Output Format: JSON representation of the EDI schema, including delimiters, segment definitions, and hierarchical structures.
+Robustness: Recursive processing for nested groups/loops; error handling for invalid schemas, missing elements, or file I/O; defaults for undefined data types.
+Delimiters: Fixed defaults (segment: "~", field: "*", component: ":"), configurable via schema.
+Compatibility: Names are sanitized to Ballerina identifier rules (e.g., replace non-alphanumeric with "", prefix with "A" if starting non-letter).
+
+The tool is designed for medium-complexity EDI standards like X12 4010 (e.g., 850 Purchase Order), ensuring robustness for legacy systems by preserving min/max occurrences, required flags, and data types.

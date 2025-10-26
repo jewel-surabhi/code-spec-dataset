@@ -1,0 +1,40 @@
+The SORT1F program is a COBOL-based utility designed to demonstrate internal sorting capabilities using COBOL's SORT verb. This program sorts and processes datasets using a simple configuration with USING and GIVING clauses. It is part of a set of examples showcasing COBOL's internal sort operations, focusing on different combinations of input/output procedures.
+
+Key features:
+
+Purpose:
+The program uses COBOL's internal sort facility to sort records from an input dataset and write the sorted output to a designated file.
+
+Sorting Mechanism:
+
+    USING: Specifies the input file (INFile) containing unsorted records.
+    GIVING: Specifies the output file (OUTFile) where sorted records are written.
+    Sort Key: Records are sorted in ascending order based on the SORTFile-Cust-Last-Name field.
+
+Input and Output:
+
+    Input File (INFile):
+        Path: ../data/customer.dat.txt
+        Organization: Line sequential
+        Contains unsorted records.
+    Output File (OUTFile):
+        Path: ../spool/cust-sort1f-out.txt
+        Organization: Line sequential
+        Contains sorted records.
+    Sort File (SORTFile):
+        Temporary work file used by the COBOL runtime for sorting operations.
+
+Error Handling:
+
+    Checks the SORT-RETURN status.
+    Displays a warning message if the sort operation fails (SORT-RETURN > 0).
+
+Program Structure:
+
+    1000-Begin-Job: Placeholder for initialization logic (handled by the OS for this example).
+    2000-Process: Executes the sort operation using USING and GIVING clauses. Handles errors if sorting fails.
+    3000-End-Job: Placeholder for cleanup logic (handled by the OS for this example).
+
+Maintenance:
+
+    Created on 2020-08-16 by dastagg for learning purposes.

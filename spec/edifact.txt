@@ -1,0 +1,163 @@
+EDIFACT to EDI Schema Converter Specification
+
+Purpose: Convert EDIFACT (Electronic Data Interchange for Administration, Commerce, and Transport) message schemas from the UNECE website into a JSON-serializable EDISchema format, supporting single or multiple message types, for compatibility with legacy EDI systems.
+Language: Implemented in Ballerina, using http, lang.regexp, log, io, and edi modules.
+License: Apache License 2.0, distributed "AS IS" without warranties.
+
+Inputs
+
+EDIFACT Version: String specifying the EDIFACT version (e.g., "D96A").
+Message Type: Optional string to process a single message type (e.g., "INVOIC"); if absent, process all message types.
+Output Directory: Directory path for JSON output files (e.g., INVOIC.json per message type).
+Source: HTML pages from UNECE (https://service.unece.org/trade/untdid//trmd/), containing message and segment definitions.
+
+Outputs
+
+EDI Schema Object (EDISchema):
+name: Message type code (e.g., "INVOIC").
+ignoreSegments: Array with "UNB" by default.
+delimiters: Fixed {segment: "'", field: "+", component: ":", repetition: "*", decimalSeparator: ","}.
+segments: Array of Segement (single segment ref) or SegmentGroup (nested groups).
+segmentDefinitions: Map of SegmentDef by code (e.g., {"DTM": {...}}).
+
+File Output: JSON file(s) in output directory, named .json.
+Errors: Descriptive errors for invalid version, message type, HTTP failures, or parsing issues.
+
+Data Structures
+
+Segement: {ref: string, tag: string, minOccurances?: int, maxOccurances: int}.
+References a segment definition; includes sanitized tag, occurrence constraints.
+
+SegmentGroup: {tag: string, minOccurances?: int, maxOccurances: int, segments: (Segement|SegmentGroup)[]}.
+Represents nested groups with occurrence constraints and child segments/groups.
+
+SegmentDef: {code: string, tag: string, fields: FieldDef[]}.
+Defines segment structure with code, tag, and fields.
+
+FieldDef: {tag: string, dataType?: string, required: boolean, repeat: boolean, components?: ComponentDef[]}.
+Defines field properties; includes optional composite components.
+
+ComponentDef: {tag: string, required: boolean, dataType?: string}.
+Defines sub-fields for composite fields.
+
+Delimiters: Fixed record with segment, field, component, repetition, and decimal separators.
+SegmentDefintions: Map of SegmentDef keyed by segment code.
+
+Processing Flow
+
+Main Entry (convertEdifactToEdi):
+Construct UNECE URL for version (e.g., trade/untdid/D96A/trmd/).
+Fetch message types list (trmdi1.htm); error if HTTP status ≠ 200.
+Parse message types using msgTypeReg ( links).
+For each message type (or specific messageType):
+Call genEdiSchema to process and save schema.
+
+Error if specific messageType not found.
+
+Schema Generation (genEdiSchema):
+Fetch message type HTML (e.g., INVOIC.htm).
+Generate EDISchema via genMsgTypeEdiSchema.
+Write JSON to /.json, appending "/" to dir if needed.
+Log info message for each schema generation.
+
+Message Type Schema (genMsgTypeEdiSchema):
+Initialize EDISchema with name, ignoreSegments=["UNB"], fixed delimiters.
+Extract segment table using segementTableReg.
+Parse segments and groups with segmentGroupOrSegmentReg.
+Build schema via genSegmentsSchema.
+
+Segment/Group Processing (genSegmentsSchema):
+Iterate matches (groups or segments):
+Group (segmentGroupReg): Parse via genSegmentGroupSchema (group number, status, occurrence, depth).
+Track depth using |; manage stack (segmentGroupsSeq) to nest groups.
+Adjust hierarchy based on depth changes (pop/push groups).
+
+Segment (genSementSchema): Parse code, tag, status, occurrence.
+Add to segments (top-level) or currentGroup.segments.
+Fetch/cache SegmentDef for new segments.
+
+Segment Group Schema (genSegmentGroupSchema):
+Parse group number, status ("M"/"C"), occurrence, depth (| count).
+Create SegmentGroup with tag="group_", minOccurances (1 if "M"), maxOccurances.
+Return group and depth for nesting.
+
+Segment Schema (genSementSchema):
+Parse code, description (→ tag via getTag), status, occurrence.
+Create Segement with ref, sanitized tag, occurrence constraints.
+Add to top-level segments or current group.
+If code not in segmentDefintions:
+Use predefined UNH, UNT, UNS, DTM if applicable.
+Else, fetch segment page, parse with getSegmentDef.
+
+Segment Definition (getSegmentDef):
+Parse segment page with fieldAndComponentReg for fields/components.
+Initialize fields=[{tag: "code", required: true}].
+Call addFields to process field/component matches.
+
+Field Processing (addFields):
+For each match:
+Field (fieldReg): Parse via getField (tag, status, occurrence, type).
+Component: Parse via getComponent, add to current field’s components.
+
+Component Parsing (getComponent):
+Fetch component page; parse name (componentNameReg) and type (componentTypeReg).
+Create ComponentDef with sanitized tag (via getComponentName), required ("M" → true), dataType (via getType).
+
+Field Parsing (getField):
+Parse tag, status, occurrence, type (via occuranceAndTypeReg).
+Create FieldDef with sanitized tag (via getFieldNames), dataType (composite if empty, else via getType), repeat (occurrence > 1).
+
+Helper Functions:
+getTag: Replace spaces, "/", "-", "&" with "_".
+getMinOccurances: Return 1 if "M", else ().
+getType: Map "an.." → "string", "n.." → "int"; default () (TODO: float).
+getDepth: Count | for nesting level.
+isSingleSegment: Check if no |.
+getComponentName/getFieldNames: Append number for duplicates (e.g., "tag_1").
+
+Error Handling and Logging
+
+Errors:
+Invalid version/message type: "Invalid version " or "Invalid message type ".
+HTTP failures: Status ≠ 200/404.
+Parsing issues: "Invalid segment/component found", "Segment table not found".
+Descriptive context for segment/field errors.
+
+Debug Logs: Log missing segments (e.g., "Segment DTM not found").
+Info Logs: Log schema generation (e.g., "Generating EDI schema for INVOIC").
+Graceful Handling: Cache predefined segments (UNH, UNT, UNS, DTM); skip 404 segments.
+
+Example
+
+Input URL: https://service.unece.org/trade/untdid/D96A/trmd/INVOIC.htm
+Segment Table (HTML snippet):Segment group 2------------------ M 10--++|
+  DTM  Date/time/period          M 1
+  NAD  Name and address          C 5
+
+Output JSON:{
+  "name": "INVOIC",
+  "ignoreSegments": ["UNB"],
+  "delimiters": {"segment": "'", "field": "+", "component": ":", "repetition": "*", "decimalSeparator": ","},
+  "segmentDefinitions": {
+    "DTM": {"code": "DTM", "tag": "Date_time_period", "fields": [{"tag": "code", "required": true}, ...]},
+    "NAD": {"code": "NAD", "tag": "Name_and_address", "fields": [{"tag": "code", "required": true}, ...]}
+  },
+  "segments": [
+    {
+      "tag": "group_2",
+      "minOccurances": 1,
+      "maxOccurances": 10,
+      "segments": [
+        {"ref": "DTM", "tag": "Date_time_period", "minOccurances": 1, "maxOccurances": 1},
+        {"ref": "NAD", "tag": "Name_and_address", "maxOccurances": 5}
+      ]
+    }
+  ]
+}
+
+Notes
+
+Legacy Context: Supports EDIFACT standards (e.g., D96A) used in legacy trade systems.
+Limitations: Float data type not supported (TODO); assumes predefined UNH/UNT/UNS/DTM.
+Extensibility: Fixed delimiters; could add custom delimiter support.
+Dependencies: Requires Ballerina runtime and internet access to UNECE.

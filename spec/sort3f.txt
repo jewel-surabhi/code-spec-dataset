@@ -1,0 +1,65 @@
+The SORT3F program is a COBOL-based utility designed to demonstrate internal sorting with a USING clause and an Output Procedure. It processes records from an input dataset, sorts them, applies post-sorting logic, and writes the processed records to an output file.
+
+Key features:
+
+Purpose:
+The program utilizes COBOL's internal sort facility to sort records from an input file and process them using an Output Procedure before writing them to an output file.
+
+Sorting Mechanism:
+
+    USING Clause: Specifies the input file (INFile) containing unsorted records.
+    Output Procedure (OUTPUT PROCEDURE): Processes sorted records retrieved from the sort work file (SORTFile) before writing them to the output file (OUTFile).
+    Sort Key: Records are sorted in ascending order by the SORTFile-Cust-State field.
+
+Input and Output:
+
+    Input File (INFile):
+        Path: ../data/customer.dat.txt.
+        Organization: Line sequential.
+        Contains unsorted customer records.
+        File status tracked via WS-INFile-Status.
+    Output File (OUTFile):
+        Path: ../spool/cust-sort3f-out.txt.
+        Organization: Line sequential.
+        Stores processed, sorted customer records.
+        File status tracked via WS-OUTFile-Status.
+    Sort File (SORTFile):
+        Temporary work file used for sorting operations.
+        File status tracked via WS-SORTFile-Status.
+
+Error Handling:
+
+    File Operations:
+        Validates file status for both read and write operations (WS-INFile-Status, WS-OUTFile-Status).
+        Displays error messages for failed operations.
+    Sort Operation:
+        Checks SORT-RETURN status.
+        Displays a warning message if sorting fails (SORT-RETURN > 0).
+
+Procedure Flow:
+
+    1000-Begin-Job:
+        Placeholder for initialization logic, displaying a start message.
+    2000-Process:
+        Executes the sort operation with a USING clause and an Output Procedure (2200-Output-Procedure).
+        Opens the output file (OUTFile).
+        Retrieves sorted records from the sort file (8000-Return-SortFile).
+        Processes and writes sorted records to the output file (2210-Process-OUTFile-Record, 6000-Write-OutFile).
+    3000-End-Job:
+        Closes the output file (OUTFile).
+        Displays an end-of-job message.
+
+Record Processing:
+
+    Retrieves sorted records from the sort work file using the RETURN statement (8000-Return-SortFile).
+    Processes each record in the Output Procedure (2210-Process-OUTFile-Record) before writing it to the output file (6000-Write-OutFile).
+
+Counters:
+
+    Tracks the number of records processed for INFile, SORTFile, and OUTFile using counters in WS-File-Counters.
+
+Maintenance:
+
+    Created on 2020-08-16 by dastagg to learn COBOL's internal sort operations with post-sorting logic.
+
+This program showcases COBOL's ability to process sorted records using an Output Procedure, enabling custom logic to be applied after sorting but before writing records to the output file. It is suitable for scenarios requiring post-sorting data transformation or validation.
